@@ -894,7 +894,7 @@ class BetterPlayerController {
   }
 
   void playPreviousVideo() {
-    _postEvent(BetterPlayerEvent(BetterPlayerEventType.playNext));
+    _postEvent(BetterPlayerEvent(BetterPlayerEventType.playPrevious));
   }
 
   ///Setup track parameters for currently played video. Can be only used for HLS or DASH
