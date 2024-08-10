@@ -459,7 +459,7 @@ class _BetterPlayerMaterialControlsState
                 ],
               ],
             ),
-            const SizedBox(height: 5),
+            const SizedBox(height: 4),
             Expanded(
               flex: 75,
               child: Row(
