@@ -1,5 +1,5 @@
 import 'dart:async';
-
+import 'dart:math';
 import 'package:better_player_plus/src/configuration/better_player_controls_configuration.dart';
 import 'package:better_player_plus/src/controls/better_player_clickable_widget.dart';
 import 'package:better_player_plus/src/controls/better_player_controls_state.dart';
@@ -9,6 +9,8 @@ import 'package:better_player_plus/src/controls/better_player_progress_colors.da
 import 'package:better_player_plus/src/core/better_player_controller.dart';
 import 'package:better_player_plus/src/core/better_player_utils.dart';
 import 'package:better_player_plus/src/video_player/video_player.dart'; // Flutter imports:
+import 'package:screen_brightness/screen_brightness.dart';
+import 'package:volume_controller/volume_controller.dart';
 import 'package:flutter/material.dart';
 
 class BetterPlayerMaterialControls extends StatefulWidget {
@@ -39,6 +41,12 @@ class _BetterPlayerMaterialControlsState
   bool _displayTapped = false;
   bool _wasLoading = false;
   bool _isLooping = false;
+  double _brightness = 0.5;
+  double _volume = 0.5;
+  double _verticalDragStartY = 0.0;
+  double _accumulatedDelta = 0.0;
+  double _verticalDragSensitivity = 200.0; // Higher sensitivity value for smoother control
+
   VideoPlayerController? _controller;
   BetterPlayerController? _betterPlayerController;
   StreamSubscription? _controlsVisibilityStreamSubscription;
@@ -46,6 +54,18 @@ class _BetterPlayerMaterialControlsState
   BetterPlayerControlsConfiguration get _controlsConfiguration =>
       widget.controlsConfiguration;
 
+  @override
+  void initState() {
+    super.initState();
+    _initializeSettings();
+  }
+
+  void _initializeSettings() async {
+    // Initialize brightness and volume
+    _brightness = await ScreenBrightness().current;
+    _volume = await VolumeController().getVolume();
+    VolumeController().showSystemUI = false;
+  }
   @override
   VideoPlayerValue? get latestValue => _latestValue;
 
@@ -93,6 +113,42 @@ class _BetterPlayerMaterialControlsState
       onDoubleTapDown: (details) {
         _handleDoubleTap(details);
       },
+      onVerticalDragStart: (details) {
+        _verticalDragStartY = details.globalPosition.dy;
+        _accumulatedDelta = 0.0;  // Reset delta when a new drag starts
+      },
+      onVerticalDragUpdate: (details) {
+        if(_betterPlayerController!.isFullScreen){
+          final screenSize = MediaQuery
+              .of(context)
+              .size;
+          final dx = details.globalPosition.dx;
+          final dy = details.globalPosition.dy;
+
+          // Calculate the difference in the Y axis
+          final verticalDragDelta = dy - _verticalDragStartY;
+
+          // Accumulate the delta for smoother changes
+          _accumulatedDelta += verticalDragDelta;
+          _verticalDragStartY = dy; // Reset startY to the current position
+
+          // Calculate the angle of the gesture
+          final angle = atan2(verticalDragDelta.abs(), details.delta.dx.abs());
+
+          // Check if the gesture is primarily vertical
+          if (angle > pi / 4) {
+            final changeAmount = _accumulatedDelta / _verticalDragSensitivity;
+            if (dx < screenSize.width / 2) {
+              // Left side: control brightness
+              _adjustBrightness(-changeAmount);
+            } else {
+              // Right side: control volume
+              _adjustVolume(-changeAmount);
+            }
+            _accumulatedDelta = 0.0; // Reset delta after applying change
+          }
+        }
+      },
       child: AbsorbPointer(
         absorbing: controlsNotVisible,
         child: Stack(
@@ -137,6 +193,17 @@ class _BetterPlayerMaterialControlsState
   void _onDoubleTapRight() {
     skipForward();
   }
+
+  void _adjustBrightness(double delta) async {
+    _brightness = (_brightness + delta).clamp(0.0, 1.0);
+    await ScreenBrightness().setScreenBrightness(_brightness);
+  }
+
+  void _adjustVolume(double delta) {
+    _volume = (_volume + delta).clamp(0.0, 1.0);
+    VolumeController().setVolume(_volume);
+  }
+
 
   @override
   void dispose() {
