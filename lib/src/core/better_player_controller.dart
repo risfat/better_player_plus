@@ -882,11 +882,19 @@ class BetterPlayerController {
   }
 
   ///Play next video form playlist. Do not use manually.
-  void playNextVideo() {
-    _nextVideoTime = 0;
-    _nextVideoTimeStreamController.add(_nextVideoTime);
-    _postEvent(BetterPlayerEvent(BetterPlayerEventType.changedPlaylistItem));
-    cancelNextVideoTimer();
+  // void playNextVideo() {
+  //   _nextVideoTime = 0;
+  //   _nextVideoTimeStreamController.add(_nextVideoTime);
+  //   _postEvent(BetterPlayerEvent(BetterPlayerEventType.changedPlaylistItem));
+  //   cancelNextVideoTimer();
+  // }
+
+    void playNextVideo() {
+    _postEvent(BetterPlayerEvent(BetterPlayerEventType.playNext));
+  }
+
+  void playPreviousVideo() {
+    _postEvent(BetterPlayerEvent(BetterPlayerEventType.playNext));
   }
 
   ///Setup track parameters for currently played video. Can be only used for HLS or DASH

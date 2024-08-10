@@ -62,6 +62,18 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
     _showModalBottomSheet([_buildMoreOptionsList()]);
   }
 
+  void onShowSubtitlesClicked(){
+    _showSubtitlesSelectionWidget();
+  }
+
+  void onShowAudioTracksClicked(){
+    _showAudioTracksSelectionWidget();
+  }
+
+  void onShowSpeedClicked(){
+    _showSpeedChooserWidget();
+  }
+
   Widget _buildMoreOptionsList() {
     final translations = betterPlayerController!.translations;
     return SingleChildScrollView(
