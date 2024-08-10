@@ -38,6 +38,7 @@ class _BetterPlayerMaterialControlsState
   Timer? _showAfterExpandCollapseTimer;
   bool _displayTapped = false;
   bool _wasLoading = false;
+  bool _isLooping = true;
   VideoPlayerController? _controller;
   BetterPlayerController? _betterPlayerController;
   StreamSubscription? _controlsVisibilityStreamSubscription;
@@ -465,7 +466,7 @@ class _BetterPlayerMaterialControlsState
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   _buildLockButton(),
-                  _buildAspectButton(_controller),
+                  _buildLoopButton(_controller),
                   const Spacer(),
                   if (_controlsConfiguration.enablePlayPause) ...[
                     _buildPreviousButton(),
@@ -540,25 +541,25 @@ class _BetterPlayerMaterialControlsState
 
   Widget _buildMiddleRow() {
     return Container(
-      // color: Colors.transparent,
+      color: Colors.transparent,
       width: double.infinity,
       height: double.infinity,
       child: _betterPlayerController?.isLiveStream() == true
           ? const SizedBox()
           : Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                if (_controlsConfiguration.enableSkips)
-                  Expanded(child: _buildSkipButton())
-                else
-                  const SizedBox(),
-                _buildReplayButton(_controller!),
-                if (_controlsConfiguration.enableSkips)
-                  Expanded(child: _buildForwardButton())
-                else
-                  const SizedBox(),
-              ],
-            ),
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          if (_controlsConfiguration.enableSkips)
+            Expanded(child: _buildSkipButton())
+          else
+            const SizedBox(),
+          _buildReplayButton(_controller!),
+          if (_controlsConfiguration.enableSkips)
+            Expanded(child: _buildForwardButton())
+          else
+            const SizedBox(),
+        ],
+      ),
     );
   }
 
@@ -735,30 +736,32 @@ class _BetterPlayerMaterialControlsState
     );
   }
 
-  Widget _buildAspectButton(
+  Widget _buildLoopButton(
     VideoPlayerController? controller,
   ) {
     return BetterPlayerMaterialClickableWidget(
       onTap: () {
-        // cancelAndRestartTimer();
-        if (_betterPlayerController?.getFit() == BoxFit.cover) {
-          _betterPlayerController?.setOverriddenFit(BoxFit.contain);
-        } else {
-          _betterPlayerController?.setOverriddenFit(BoxFit.cover);
+        cancelAndRestartTimer();
+        if(_isLooping){
+          _betterPlayerController?.setLooping(false);
+        }else{
+          _betterPlayerController?.setLooping(true);
         }
-        // if (_latestValue!.volume == 0) {
-        //   _betterPlayerController!.setVolume(_latestVolume ?? 0.5);
+
+        _isLooping = !_isLooping; // Toggle looping status
+
+        // if (_betterPlayerController?.getFit() == BoxFit.cover) {
+        //   _betterPlayerController?.setOverriddenFit(BoxFit.contain);
         // } else {
-        //   _latestVolume = controller!.value.volume;
-        //   _betterPlayerController!.setVolume(0.0);
+        //   _betterPlayerController?.setOverriddenFit(BoxFit.cover);
         // }
       },
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Icon(
-          _betterPlayerController?.getFit() == BoxFit.cover
-              ? Icons.aspect_ratio
-              : Icons.fit_screen_outlined,
+          _isLooping
+              ? Icons.repeat_one
+              : Icons.repeat,
           size: 25,
           color: _controlsConfiguration.iconsColor,
         ),
@@ -808,6 +811,7 @@ class _BetterPlayerMaterialControlsState
   Widget _buildNextButton() {
     return BetterPlayerMaterialClickableWidget(
       onTap: () {
+        cancelAndRestartTimer();
         _betterPlayerController!.playNextVideo();
       },
       child: Padding(
@@ -824,6 +828,7 @@ class _BetterPlayerMaterialControlsState
   Widget _buildPreviousButton() {
     return BetterPlayerMaterialClickableWidget(
       onTap: () {
+        cancelAndRestartTimer();
         _betterPlayerController!.playPreviousVideo();
       },
       child: Padding(
