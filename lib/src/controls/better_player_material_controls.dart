@@ -170,7 +170,7 @@ class _BetterPlayerMaterialControlsState
         }
       },
       onVerticalDragEnd: (details) {
-        if(_betterPlayerController!.controlsEnabled){
+        if(_betterPlayerController!.controlsEnabled && !_betterPlayerController!.isFullScreen){
           final screenSize = MediaQuery
               .of(context)
               .size;
