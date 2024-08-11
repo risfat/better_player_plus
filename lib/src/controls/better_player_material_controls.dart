@@ -170,16 +170,22 @@ class _BetterPlayerMaterialControlsState
         }
       },
       onVerticalDragEnd: (details) {
-        final screenSize = MediaQuery.of(context).size;
-        final dy = details.primaryVelocity ?? 0.0;
-        // final verticalThreshold = screenSize.height * 0.05;
+        if(_betterPlayerController!.controlsEnabled){
+          final screenSize = MediaQuery
+              .of(context)
+              .size;
+          final dy = details.primaryVelocity ?? 0.0;
+          // final verticalThreshold = screenSize.height * 0.05;
 
-        print("Vertical Drag End Detected: dy=$dy, startY=$_verticalDragStartY, screenHeight=${screenSize.height}");
+          print(
+              "Vertical Drag End Detected: dy=$dy, startY=$_verticalDragStartY, screenHeight=${screenSize
+                  .height}");
 
-        // Swipe up gesture for fullscreen regardless of current fullscreen state
-        if (dy < 0) { // Only consider upward swipes
-          // Trigger fullscreen action
-          _toggleFullscreen();
+          // Swipe up gesture for fullscreen regardless of current fullscreen state
+          if (dy < 0) { // Only consider upward swipes
+            // Trigger fullscreen action
+            _toggleFullscreen();
+          }
         }
       },
       // onVerticalDragEnd: (details) {
@@ -272,6 +278,7 @@ class _BetterPlayerMaterialControlsState
   }
 
   void _showSeekOverlay() {
+    _showBrightnessVolumeOverlay = false;
     setState(() {
       _isSeeking = true;
     });
@@ -418,6 +425,8 @@ class _BetterPlayerMaterialControlsState
   }
 
   Widget _buildBrightnessVolumeOverlay() {
+    final isBrightness = _overlayText.contains('Brightness');
+    final overlayIcon = isBrightness ? Icons.wb_sunny : Icons.volume_up;
     return Positioned(
       top: MediaQuery.of(context).size.height * 0.4,
       left: MediaQuery.of(context).size.width * 0.3,
@@ -431,6 +440,11 @@ class _BetterPlayerMaterialControlsState
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            Icon(
+              overlayIcon,
+              color: Colors.white,
+              size: 40,
+            ),
             Text(
               _overlayText,
               style: const TextStyle(
@@ -440,12 +454,20 @@ class _BetterPlayerMaterialControlsState
             ),
             const SizedBox(height: 10),
             LinearProgressIndicator(
-              value: _overlayText.contains('Brightness')
-                  ? _brightness
-                  : _volume,
+              value: _overlayText.contains('Brightness') ? _brightness : _volume,
               backgroundColor: Colors.grey,
               valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+              // valueColor: AlwaysStoppedAnimation<Color>(
+              //   _overlayText.contains('Brightness')
+              //       ? Colors.yellow.shade600
+              //       : Colors.blue.shade600,
+              // ),
+              minHeight: 8.0, // Increase the height for better visibility
+              semanticsLabel: _overlayText,
+              semanticsValue: "${(_brightness * 100).round()}%", // Display value as percentage
+              borderRadius: BorderRadius.circular(5),
             ),
+            const SizedBox(height: 10),
           ],
         ),
       ),
@@ -509,6 +531,8 @@ class _BetterPlayerMaterialControlsState
                   : 0.0,
               backgroundColor: Colors.grey,
               valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+              minHeight: 8.0,
+              borderRadius: BorderRadius.circular(5),
             ),
             const SizedBox(height: 5),
           ],
