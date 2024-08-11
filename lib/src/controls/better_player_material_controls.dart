@@ -625,22 +625,22 @@ class _BetterPlayerMaterialControlsState
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
                     _buildBackButton(),
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      width: MediaQuery.of(context).size.width /
-                          (betterPlayerController!.isFullScreen ? 1.4 : 2.2),
+                    Expanded(
+                      // padding: const EdgeInsets.all(8),
+                      // width: MediaQuery.of(context).size.width /
+                      //     (betterPlayerController!.isFullScreen ? 1.4 : 2.2),
                       child: Text(
                         _betterPlayerController?.betterPlayerDataSource?.url
                                 .split('/')
                                 .last ??
                             "Unknown",
-                        maxLines: 1,
+                        maxLines: betterPlayerController!.isFullScreen ? 2 : 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                             fontWeight: FontWeight.bold, fontSize: 15),
                       ),
                     ),
-                    const Spacer(),
+                    // const Spacer(),
                     if (_controlsConfiguration.enablePip)
                       _buildPipButtonWrapperWidget(
                           controlsNotVisible, _onPlayerHide)
