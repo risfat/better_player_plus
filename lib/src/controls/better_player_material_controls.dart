@@ -131,11 +131,13 @@ class _BetterPlayerMaterialControlsState
         _handleDoubleTap(details);
       },
       onVerticalDragStart: (details) {
-        _verticalDragStartY = details.globalPosition.dy;
-        _accumulatedDelta = 0.0;
+        if(_betterPlayerController!.controlsEnabled){
+          _verticalDragStartY = details.globalPosition.dy;
+          _accumulatedDelta = 0.0;
+        }
       },
       onVerticalDragUpdate: (details) {
-        if(_betterPlayerController!.isFullScreen && _betterPlayerController!.controlsEnabled){
+        if(_betterPlayerController!.controlsEnabled){
           final screenSize = MediaQuery
               .of(context)
               .size;
@@ -152,20 +154,51 @@ class _BetterPlayerMaterialControlsState
           // Calculate the angle of the gesture
           final angle = atan2(verticalDragDelta.abs(), details.delta.dx.abs());
 
-          // Check if the gesture is primarily vertical
-          if (angle > pi / 4) {
-            final changeAmount = _accumulatedDelta / _verticalDragSensitivity;
-            if (dx < screenSize.width / 2) {
-              // Left side: control brightness
-              _adjustBrightness(-changeAmount);
-            } else {
-              // Right side: control volume
-              _adjustVolume(-changeAmount);
+          if(_betterPlayerController!.isFullScreen){ // Check if the gesture is primarily vertical
+            if (angle > pi / 4) {
+              final changeAmount = _accumulatedDelta / _verticalDragSensitivity;
+              if (dx < screenSize.width / 4) {
+                // Left side: control brightness
+                _adjustBrightness(-changeAmount);
+              } else if (dx > 3 * screenSize.width / 4) {
+                // Right side: control volume
+                _adjustVolume(-changeAmount);
+              }
+              _accumulatedDelta = 0.0; // Reset delta after applying change
             }
-            _accumulatedDelta = 0.0; // Reset delta after applying change
           }
         }
       },
+      onVerticalDragEnd: (details) {
+        final screenSize = MediaQuery.of(context).size;
+        final dy = details.primaryVelocity ?? 0.0;
+        // final verticalThreshold = screenSize.height * 0.05;
+
+        print("Vertical Drag End Detected: dy=$dy, startY=$_verticalDragStartY, screenHeight=${screenSize.height}");
+
+        // Swipe up gesture for fullscreen regardless of current fullscreen state
+        if (dy < 0) { // Only consider upward swipes
+          // Trigger fullscreen action
+          _toggleFullscreen();
+        }
+      },
+      // onVerticalDragEnd: (details) {
+      //   final screenSize = MediaQuery.of(context).size;
+      //   final dy = details.primaryVelocity ?? 0.0;
+      //
+      //   print("Vertical Drag End Detected: dy=$dy, startY=$_verticalDragStartY, screenHeight=${screenSize.height}");
+      //
+      //   // Only consider upward swipes
+      //   if (dy < 0) { // Check for upward swipe
+      //     print("Vertical Drag End: Swipe Up Detected");
+      //     // Ensure the swipe started in the vertical center of the screen
+      //     if (_verticalDragStartY > screenSize.height * 0.05) {
+      //       print("Triggering fullscreen action");
+      //       _toggleFullscreen();
+      //     }
+      //   }
+      // },
+
       onHorizontalDragStart: (details) {
         if (_betterPlayerController!.controlsEnabled){
           _horizontalDragStartX = details.globalPosition.dx;
@@ -226,6 +259,16 @@ class _BetterPlayerMaterialControlsState
         ),
       ),
     );
+  }
+
+  void _toggleFullscreen() {
+    if (_betterPlayerController != null) {
+      if (_betterPlayerController!.isFullScreen) {
+        _betterPlayerController!.exitFullScreen();
+      } else {
+        _betterPlayerController!.enterFullScreen();
+      }
+    }
   }
 
   void _showSeekOverlay() {
@@ -533,6 +576,7 @@ class _BetterPlayerMaterialControlsState
 
     _overlayHideTimer?.cancel();
     _doubleTapIconHideTimer?.cancel();
+    _resetDoubleTapCountTimer?.cancel();
   }
 
   @override
