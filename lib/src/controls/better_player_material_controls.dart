@@ -44,8 +44,25 @@ class _BetterPlayerMaterialControlsState
   double _brightness = 0.5;
   double _volume = 0.5;
   double _verticalDragStartY = 0.0;
+  double _horizontalDragStartX = 0.0;
   double _accumulatedDelta = 0.0;
   double _verticalDragSensitivity = 200.0; // Higher sensitivity value for smoother control
+  double _horizontalDragSensitivity = 5.0;
+  bool _showBrightnessVolumeOverlay = false;
+  String _overlayText = "";
+  Timer? _overlayHideTimer;
+
+  bool _showLeftDoubleTapIcon = false;
+  bool _showRightDoubleTapIcon = false;
+  Timer? _doubleTapIconHideTimer;
+
+  int _leftDoubleTapCount = 0;
+  int _rightDoubleTapCount = 0;
+  Timer? _resetDoubleTapCountTimer;
+
+  bool _isSeeking = false;
+  Duration _seekPosition = Duration.zero;
+
 
   VideoPlayerController? _controller;
   BetterPlayerController? _betterPlayerController;
@@ -115,10 +132,10 @@ class _BetterPlayerMaterialControlsState
       },
       onVerticalDragStart: (details) {
         _verticalDragStartY = details.globalPosition.dy;
-        _accumulatedDelta = 0.0;  // Reset delta when a new drag starts
+        _accumulatedDelta = 0.0;
       },
       onVerticalDragUpdate: (details) {
-        if(_betterPlayerController!.isFullScreen){
+        if(_betterPlayerController!.isFullScreen && _betterPlayerController!.controlsEnabled){
           final screenSize = MediaQuery
               .of(context)
               .size;
@@ -149,6 +166,41 @@ class _BetterPlayerMaterialControlsState
           }
         }
       },
+      onHorizontalDragStart: (details) {
+        if (_betterPlayerController!.controlsEnabled){
+          _horizontalDragStartX = details.globalPosition.dx;
+          _seekPosition = _controller?.value.position ?? Duration.zero;
+          _isSeeking = true;
+        }
+      },
+      onHorizontalDragUpdate: (details) {
+        if(_betterPlayerController!.controlsEnabled){
+          final horizontalDragDelta = details.globalPosition.dx -
+              _horizontalDragStartX;
+          _horizontalDragStartX = details.globalPosition.dx;
+
+          final changeInSeconds = (horizontalDragDelta /
+              _horizontalDragSensitivity).round();
+          _seekPosition += Duration(seconds: changeInSeconds);
+
+          final videoDuration = _controller?.value.duration ?? Duration.zero;
+
+          // Clamp the _seekPosition within the video duration
+          if (_seekPosition < Duration.zero) {
+            _seekPosition = Duration.zero;
+          } else if (_seekPosition > videoDuration) {
+            _seekPosition = videoDuration;
+          }
+
+          _showSeekOverlay();
+        }
+      },
+      onHorizontalDragEnd: (details) {
+        if (_betterPlayerController!.controlsEnabled){
+          _controller?.seekTo(_seekPosition);
+          _hideSeekOverlay();
+        }
+      },
       child: AbsorbPointer(
         absorbing: controlsNotVisible,
         child: Stack(
@@ -166,42 +218,303 @@ class _BetterPlayerMaterialControlsState
             ),
             Positioned(bottom: 0, left: 0, right: 0, child: _buildBottomBar()),
             _buildNextVideoWidget(),
+            if (_isSeeking) _buildSeekOverlay(),
+            if (_showBrightnessVolumeOverlay) _buildBrightnessVolumeOverlay(),
+            if (_showLeftDoubleTapIcon) _buildLeftDoubleTapIcon(),
+            if (_showRightDoubleTapIcon) _buildRightDoubleTapIcon(),
           ],
         ),
       ),
     );
   }
 
+  void _showSeekOverlay() {
+    setState(() {
+      _isSeeking = true;
+    });
+  }
+
+  void _hideSeekOverlay() {
+    setState(() {
+      _isSeeking = false;
+    });
+  }
+
   void _handleDoubleTap(TapDownDetails details) {
     final tapX = details.globalPosition.dx;
     final screenWidth = MediaQuery.of(context).size.width;
 
-    // It's a double tap
-    if (tapX < screenWidth / 2) {
-      // Left side double tap
+    if (tapX < screenWidth / 4) {
       _onDoubleTapLeft();
-    } else {
-      // Right side double tap
+    } else if (tapX > 3 * screenWidth / 4) {
       _onDoubleTapRight();
     }
   }
 
   void _onDoubleTapLeft() {
-    skipBack();
+    _leftDoubleTapCount++;
+    _resetDoubleTapCountTimer?.cancel();
+    _resetDoubleTapCountTimer =
+        Timer(const Duration(seconds: 1), _resetDoubleTapCounts);
+
+    _showDoubleTapIcon(isLeft: true);
+    _skipBack();
   }
 
   void _onDoubleTapRight() {
-    skipForward();
+    _rightDoubleTapCount++;
+    _resetDoubleTapCountTimer?.cancel();
+    _resetDoubleTapCountTimer =
+        Timer(const Duration(seconds: 1), _resetDoubleTapCounts);
+
+    _showDoubleTapIcon(isLeft: false);
+    _skipForward();
+  }
+
+  void _showDoubleTapIcon({required bool isLeft}) {
+    setState(() {
+      if (isLeft) {
+        _showLeftDoubleTapIcon = true;
+      } else {
+        _showRightDoubleTapIcon = true;
+      }
+    });
+
+    _doubleTapIconHideTimer?.cancel();
+    _doubleTapIconHideTimer = Timer(const Duration(milliseconds: 600), () {
+      setState(() {
+        _showLeftDoubleTapIcon = false;
+        _showRightDoubleTapIcon = false;
+      });
+    });
+  }
+
+  void _skipBack() {
+    if (_controller != null) {
+      final currentPosition = _controller!.value.position;
+      final skipDuration = Duration(seconds: _leftDoubleTapCount * 10);
+      final newPosition = currentPosition - skipDuration;
+      _controller!.seekTo(newPosition);
+    }
+  }
+
+  void _skipForward() {
+    if (_controller != null) {
+      final currentPosition = _controller!.value.position;
+      final skipDuration = Duration(seconds: _rightDoubleTapCount * 10);
+      final newPosition = currentPosition + skipDuration;
+      _controller!.seekTo(newPosition);
+    }
+  }
+
+  void _resetDoubleTapCounts() {
+    _leftDoubleTapCount = 0;
+    _rightDoubleTapCount = 0;
+  }
+
+  Widget _buildLeftDoubleTapIcon() {
+    return Positioned(
+      left: 50,
+      top: _betterPlayerController!.isFullScreen ? MediaQuery.of(context).size.height / 2 - 50 : 60,
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: AnimatedOpacity(
+          opacity: _showLeftDoubleTapIcon ? 1.0 : 0.0,
+          duration: const Duration(milliseconds: 300),
+          child: Column(
+            children: [
+              Icon(
+                Icons.keyboard_double_arrow_left,
+                color: Colors.white,
+                size: 50,
+              ),
+              Text("${_leftDoubleTapCount * 10} Seconds"),
+
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRightDoubleTapIcon() {
+    return Positioned(
+      right: 50,
+      top: _betterPlayerController!.isFullScreen ? MediaQuery.of(context).size.height / 2 - 50 : 60,
+      child: Align(
+        alignment: Alignment.centerRight,
+        child: AnimatedOpacity(
+          opacity: _showRightDoubleTapIcon ? 1.0 : 0.0,
+          duration: const Duration(milliseconds: 300),
+          child: Column(
+            children: [
+              Icon(
+                Icons.keyboard_double_arrow_right,
+                color: Colors.white,
+                size: 50,
+              ),
+              Text("${_rightDoubleTapCount * 10} Seconds"),
+
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   void _adjustBrightness(double delta) async {
     _brightness = (_brightness + delta).clamp(0.0, 1.0);
     await ScreenBrightness().setScreenBrightness(_brightness);
+    _showOverlay("Brightness: ${(_brightness * 100).round()}%");
   }
 
   void _adjustVolume(double delta) {
     _volume = (_volume + delta).clamp(0.0, 1.0);
     VolumeController().setVolume(_volume);
+    _showOverlay("Volume: ${(_volume * 100).round()}%");
+  }
+
+  Widget _buildBrightnessVolumeOverlay() {
+    return Positioned(
+      top: MediaQuery.of(context).size.height * 0.4,
+      left: MediaQuery.of(context).size.width * 0.3,
+      right: MediaQuery.of(context).size.width * 0.3,
+      child: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: Colors.black.withOpacity(0.7),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              _overlayText,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+              ),
+            ),
+            const SizedBox(height: 10),
+            LinearProgressIndicator(
+              value: _overlayText.contains('Brightness')
+                  ? _brightness
+                  : _volume,
+              backgroundColor: Colors.grey,
+              valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showOverlay(String text) {
+    setState(() {
+      _overlayText = text;
+      _showBrightnessVolumeOverlay = true;
+    });
+
+    _overlayHideTimer?.cancel();
+    _overlayHideTimer = Timer(const Duration(seconds: 1), () {
+      setState(() {
+        _showBrightnessVolumeOverlay = false;
+      });
+    });
+  }
+
+  Widget _buildSeekOverlay() {
+    final videoDuration = _controller?.value.duration ?? Duration.zero;
+    final currentPosition = _controller?.value.position ?? Duration.zero;
+    final seekedTime = _seekPosition - currentPosition;
+
+    return _betterPlayerController!.isFullScreen ? Positioned(
+      top: MediaQuery.of(context).size.height * 0.4,
+      left: MediaQuery.of(context).size.width * 0.3,
+      right: MediaQuery.of(context).size.width * 0.3,
+      child: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: Colors.black.withOpacity(0.7),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              "${_formatDuration(_seekPosition)} / ${_formatDuration(videoDuration)}",
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+              ),
+            ),
+            const SizedBox(height: 5),
+            Text(
+              seekedTime.isNegative
+                  ? "[ -${_formatDuration(seekedTime.abs())} ]"
+                  : "[ +${_formatDuration(seekedTime)} ]",
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(height: 10),
+            LinearProgressIndicator(
+              value: _controller != null && videoDuration != Duration.zero
+                  ? _seekPosition.inMilliseconds / videoDuration.inMilliseconds
+                  : 0.0,
+              backgroundColor: Colors.grey,
+              valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+            ),
+            const SizedBox(height: 5),
+          ],
+        ),
+      ),
+    ) : Positioned(
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.black.withOpacity(0.7),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              "${_formatDuration(_seekPosition)} / ${_formatDuration(videoDuration)}",
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+              ),
+            ),
+            const SizedBox(height: 5),
+            Text(
+              seekedTime.isNegative
+                  ? "[ -${_formatDuration(seekedTime.abs())} ]"
+                  : "[ +${_formatDuration(seekedTime)} ]",
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+
+  String _formatDuration(Duration duration) {
+    final hours = duration.inHours.toString().padLeft(2, '0');
+    final minutes = (duration.inMinutes % 60).toString().padLeft(2, '0');
+    final seconds = (duration.inSeconds % 60).toString().padLeft(2, '0');
+
+    if (duration.inHours > 0) {
+      return '$hours:$minutes:$seconds';
+    } else {
+      return '$minutes:$seconds';
+    }
   }
 
 
@@ -217,6 +530,9 @@ class _BetterPlayerMaterialControlsState
     _initTimer?.cancel();
     _showAfterExpandCollapseTimer?.cancel();
     _controlsVisibilityStreamSubscription?.cancel();
+
+    _overlayHideTimer?.cancel();
+    _doubleTapIconHideTimer?.cancel();
   }
 
   @override
