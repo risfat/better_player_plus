@@ -1,7 +1,7 @@
 name: better_player_plus
 description: Advanced video player based on video_player and Chewie. It's solves many typical use cases and it's easy to run.
 version: 1.0.6
-homepage: https://github.com/SunnatilloShavkatov/betterplayer.git
+homepage: https://github.com/risfat/betterplayer.git
 documentation: https://github.com/SunnatilloShavkatov/betterplayer.git
 
 environment:
