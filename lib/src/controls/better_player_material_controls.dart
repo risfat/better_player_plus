@@ -258,7 +258,7 @@ class _BetterPlayerMaterialControlsState
             Positioned(bottom: 0, left: 0, right: 0, child: _buildBottomBar()),
             _buildNextVideoWidget(),
             if (_isSeeking) _buildSeekOverlay(),
-            if (_showBrightnessVolumeOverlay) _buildBrightnessVolumeOverlay(),
+            _buildBrightnessVolumeOverlay(),
             if (_showLeftDoubleTapIcon) _buildLeftDoubleTapIcon(),
             if (_showRightDoubleTapIcon) _buildRightDoubleTapIcon(),
           ],
@@ -425,14 +425,19 @@ class _BetterPlayerMaterialControlsState
   }
 
   Widget _buildBrightnessVolumeOverlay() {
-    final isBrightness = _overlayText.contains('Brightness');
-    final overlayIcon = isBrightness ? Icons.wb_sunny : Icons.volume_up;
-    return Positioned(
-      top: MediaQuery.of(context).size.height * 0.4,
-      left: MediaQuery.of(context).size.width * 0.3,
-      right: MediaQuery.of(context).size.width * 0.3,
+    final bool isBrightness = _overlayText.contains('Brightness');
+    final IconData overlayIcon = isBrightness ? Icons.wb_sunny : Icons.volume_up;
+
+    return AnimatedPositioned(
+      duration: const Duration(milliseconds: 300),
+      right:isBrightness ? (_showBrightnessVolumeOverlay && isBrightness ? 20 : -260) : null,
+      left: !isBrightness ? (_showBrightnessVolumeOverlay && !isBrightness ? 20 : -260) : null,
+      top: 0,
+      bottom: 0,
+      width: 85,
       child: Container(
-        padding: const EdgeInsets.all(10),
+        padding: const EdgeInsets.all(8),
+        margin: const EdgeInsets.symmetric(vertical: 50),
         decoration: BoxDecoration(
           color: Colors.black.withOpacity(0.7),
           borderRadius: BorderRadius.circular(10),
@@ -443,36 +448,40 @@ class _BetterPlayerMaterialControlsState
             Icon(
               overlayIcon,
               color: Colors.white,
-              size: 40,
+              size: 30,  // Reduced icon size
             ),
-            Text(
-              _overlayText,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 18,
+            const SizedBox(height: 5),  // Reduced spacing
+            Expanded(
+              child: RotatedBox(
+                quarterTurns: 3,
+                child: LinearProgressIndicator(
+                  value: isBrightness ? _brightness : _volume,
+                  backgroundColor: Colors.grey[800] ?? Colors.grey,
+                  valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                  minHeight: 10,
+                  semanticsLabel: _overlayText,
+                  semanticsValue:
+                  "${((isBrightness ? _brightness : _volume) * 100).round()}%",
+                ),
               ),
             ),
-            const SizedBox(height: 10),
-            LinearProgressIndicator(
-              value: _overlayText.contains('Brightness') ? _brightness : _volume,
-              backgroundColor: Colors.grey,
-              valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
-              // valueColor: AlwaysStoppedAnimation<Color>(
-              //   _overlayText.contains('Brightness')
-              //       ? Colors.yellow.shade600
-              //       : Colors.blue.shade600,
-              // ),
-              minHeight: 8.0, // Increase the height for better visibility
-              semanticsLabel: _overlayText,
-              semanticsValue: "${(_brightness * 100).round()}%", // Display value as percentage
-              borderRadius: BorderRadius.circular(5),
+            const SizedBox(height: 5),  // Reduced spacing
+            Text(
+              _overlayText,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 13,  // Reduced font size
+              ),
             ),
-            const SizedBox(height: 10),
           ],
         ),
       ),
     );
   }
+
+
+
 
   void _showOverlay(String text) {
     setState(() {
