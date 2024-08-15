@@ -415,13 +415,13 @@ class _BetterPlayerMaterialControlsState
   void _adjustBrightness(double delta) async {
     _brightness = (_brightness + delta).clamp(0.0, 1.0);
     await ScreenBrightness().setScreenBrightness(_brightness);
-    _showOverlay("Brightness: ${(_brightness * 100).round()}%");
+    _showOverlay("Brightness ${(_brightness * 100).round()}%");
   }
 
   void _adjustVolume(double delta) {
     _volume = (_volume + delta).clamp(0.0, 1.0);
     VolumeController().setVolume(_volume);
-    _showOverlay("Volume: ${(_volume * 100).round()}%");
+    _showOverlay("Volume ${(_volume * 100).round()}%");
   }
 
   Widget _buildBrightnessVolumeOverlay() {
@@ -430,7 +430,7 @@ class _BetterPlayerMaterialControlsState
 
     return AnimatedPositioned(
       duration: const Duration(milliseconds: 300),
-      right:isBrightness ? (_showBrightnessVolumeOverlay && isBrightness ? 20 : -260) : null,
+      right: isBrightness ? (_showBrightnessVolumeOverlay && isBrightness ? 20 : -260) : null,
       left: !isBrightness ? (_showBrightnessVolumeOverlay && !isBrightness ? 20 : -260) : null,
       top: 0,
       bottom: 0,
@@ -445,6 +445,7 @@ class _BetterPlayerMaterialControlsState
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            const SizedBox(height: 5),
             Icon(
               overlayIcon,
               color: Colors.white,
@@ -462,6 +463,7 @@ class _BetterPlayerMaterialControlsState
                   semanticsLabel: _overlayText,
                   semanticsValue:
                   "${((isBrightness ? _brightness : _volume) * 100).round()}%",
+                  borderRadius: BorderRadius.circular(15),
                 ),
               ),
             ),
@@ -474,6 +476,7 @@ class _BetterPlayerMaterialControlsState
                 fontSize: 13,  // Reduced font size
               ),
             ),
+            const SizedBox(height: 5),
           ],
         ),
       ),
@@ -718,11 +721,9 @@ class _BetterPlayerMaterialControlsState
                       ),
                     ),
                     // const Spacer(),
-                    if (_controlsConfiguration.enablePip)
-                      _buildPipButtonWrapperWidget(
-                          controlsNotVisible, _onPlayerHide)
-                    else
+                    if (_betterPlayerController!.isFullScreen)
                       _buildAudioButton(),
+                    _buildPipButton(),
                     _buildSpeedButton(),
                     _buildSubtitleButton(),
                     _buildMoreButton(),
