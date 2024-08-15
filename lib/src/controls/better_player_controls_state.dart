@@ -6,6 +6,7 @@ import 'package:better_player_plus/src/core/better_player_utils.dart';
 import 'package:collection/collection.dart' show IterableExtension;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
 
 ///Base class for both material and cupertino controls
 abstract class BetterPlayerControlsState<T extends StatefulWidget>
@@ -223,32 +224,81 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
     return false;
   }
 
+// Store the path of the selected local subtitle file
+  String? _selectedLocalSubtitlePath;
+
+  Future<void> _pickLocalSubtitle() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['srt', 'vtt'],
+    );
+
+    if (result != null) {
+      File file = File(result.files.single.path!);
+      BetterPlayerSubtitlesSource localSubtitleSource = BetterPlayerSubtitlesSource(
+        type: BetterPlayerSubtitlesSourceType.file,
+        urls: [file.path],
+        name: "Local Subtitle",
+      );
+
+      await betterPlayerController!.setupSubtitleSource(localSubtitleSource);
+
+      // Store the selected subtitle file path
+      _selectedLocalSubtitlePath = file.path;
+
+      Navigator.of(context).pop();
+    }
+  }
+
   void _showSubtitlesSelectionWidget() {
     final subtitles =
         List.of(betterPlayerController!.betterPlayerSubtitlesSourceList);
-    final noneSubtitlesElementExists = subtitles.firstWhereOrNull(
-            (source) => source.type == BetterPlayerSubtitlesSourceType.none) !=
-        null;
-    if (!noneSubtitlesElementExists) {
-      subtitles.add(BetterPlayerSubtitlesSource(
-          type: BetterPlayerSubtitlesSourceType.none));
-    }
+    // final noneSubtitlesElementExists = subtitles.firstWhereOrNull(
+    //         (source) => source.type == BetterPlayerSubtitlesSourceType.none) !=
+    //     null;
+    // if (!noneSubtitlesElementExists) {
+    //   subtitles.add(BetterPlayerSubtitlesSource(
+    //       type: BetterPlayerSubtitlesSourceType.none));
+    // }
 
+    final localSubtitlesElement = BetterPlayerMaterialClickableWidget(
+      onTap: _pickLocalSubtitle,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+        child: Row(
+          children: [
+            SizedBox(width: _selectedLocalSubtitlePath != null ? 8 : 16),
+            Visibility(
+                visible:  _selectedLocalSubtitlePath != null ,
+                child: Icon(
+                  Icons.check_outlined,
+                  color:
+                  betterPlayerControlsConfiguration.overflowModalTextColor,
+                )),
+            const SizedBox(width: 16),
+            Text(
+              "Select from Local Storage",
+              style: _getOverflowMenuElementTextStyle( _selectedLocalSubtitlePath != null ),
+            ),
+          ],
+        ),
+      ),
+    );
     _showModalBottomSheet(
-        subtitles.map((source) => _buildSubtitlesSourceRow(source)).toList());
+        subtitles.map((source) => _buildSubtitlesSourceRow(source)).toList()..add(localSubtitlesElement));
   }
 
   Widget _buildSubtitlesSourceRow(BetterPlayerSubtitlesSource subtitlesSource) {
-    final selectedSourceType =
-        betterPlayerController!.betterPlayerSubtitlesSource;
-    final bool isSelected = (subtitlesSource == selectedSourceType) ||
+    final selectedSource = betterPlayerController!.betterPlayerSubtitlesSource;
+    final bool isSelected = (subtitlesSource == selectedSource) ||
         (subtitlesSource.type == BetterPlayerSubtitlesSourceType.none &&
-            subtitlesSource.type == selectedSourceType!.type);
+            subtitlesSource.type == selectedSource!.type);
 
     return BetterPlayerMaterialClickableWidget(
       onTap: () {
         Navigator.of(context).pop();
         betterPlayerController!.setupSubtitleSource(subtitlesSource);
+        _selectedLocalSubtitlePath = null;
       },
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
@@ -260,14 +310,14 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
                 child: Icon(
                   Icons.check_outlined,
                   color:
-                      betterPlayerControlsConfiguration.overflowModalTextColor,
+                  betterPlayerControlsConfiguration.overflowModalTextColor,
                 )),
             const SizedBox(width: 16),
             Text(
               subtitlesSource.type == BetterPlayerSubtitlesSourceType.none
                   ? betterPlayerController!.translations.generalNone
                   : subtitlesSource.name ??
-                      betterPlayerController!.translations.generalDefault,
+                  betterPlayerController!.translations.generalDefault,
               style: _getOverflowMenuElementTextStyle(isSelected),
             ),
           ],
@@ -275,7 +325,6 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
       ),
     );
   }
-
   ///Build both track and resolution selection
   ///Track selection is used for HLS / DASH videos
   ///Resolution selection is used for normal videos
