@@ -717,6 +717,7 @@ class _BetterPlayerMaterialControlsState
                         maxLines: betterPlayerController!.isFullScreen ? 2 : 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
+                            color: Colors.white,
                             fontWeight: FontWeight.bold, fontSize: 15),
                       ),
                     ),
