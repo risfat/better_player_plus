@@ -713,9 +713,8 @@ class _BetterPlayerMaterialControlsState
                       _buildPipButtonWrapperWidget(
                           controlsNotVisible, _onPlayerHide)
                     else
-                      const SizedBox(),
+                      _buildAudioButton(),
                     _buildSpeedButton(),
-                    _buildAudioButton(),
                     _buildSubtitleButton(),
                     _buildMoreButton(),
                   ],
@@ -736,6 +735,7 @@ class _BetterPlayerMaterialControlsState
         padding: const EdgeInsets.all(8),
         child: Icon(
           betterPlayerControlsConfiguration.pipMenuIcon,
+          size: 24,
           color: betterPlayerControlsConfiguration.iconsColor,
         ),
       ),
@@ -910,7 +910,7 @@ class _BetterPlayerMaterialControlsState
                 ],
               ],
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 2),
             Expanded(
               flex: 75,
               child: Row(
