@@ -437,7 +437,7 @@ class _BetterPlayerMaterialControlsState
       width: 85,
       child: Container(
         padding: const EdgeInsets.all(8),
-        margin: const EdgeInsets.symmetric(vertical: 50),
+        margin: const EdgeInsets.symmetric(vertical: 110),
         decoration: BoxDecoration(
           color: Colors.black.withOpacity(0.7),
           borderRadius: BorderRadius.circular(10),
@@ -463,7 +463,7 @@ class _BetterPlayerMaterialControlsState
                   semanticsLabel: _overlayText,
                   semanticsValue:
                   "${((isBrightness ? _brightness : _volume) * 100).round()}%",
-                  borderRadius: BorderRadius.circular(15),
+                  borderRadius: BorderRadius.circular(10),
                 ),
               ),
             ),
