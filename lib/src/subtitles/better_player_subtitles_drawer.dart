@@ -104,7 +104,7 @@ class _BetterPlayerSubtitlesDrawerState
       child: Padding(
         padding: EdgeInsets.only(
             bottom: _playerVisible
-                ? _configuration!.bottomPadding + 30
+                ? _configuration!.bottomPadding + (widget.betterPlayerController.isFullScreen ? 80 : 30)
                 : _configuration!.bottomPadding,
             left: _configuration!.leftPadding,
             right: _configuration!.rightPadding),
