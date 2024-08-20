@@ -7,6 +7,9 @@ import 'package:collection/collection.dart' show IterableExtension;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:path/path.dart' as path;
+import 'package:better_player_plus/src/core/subtitle_downloader.dart';
+import 'package:better_player_plus/src/core/language_list.dart';
 
 ///Base class for both material and cupertino controls
 abstract class BetterPlayerControlsState<T extends StatefulWidget>
@@ -250,6 +253,339 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
     }
   }
 
+  void _showSubtitleSearchWidget() {
+    final videoFileName = path.basenameWithoutExtension(
+        betterPlayerController!.betterPlayerDataSource?.url ?? '');
+    final TextEditingController _searchQueryController =
+    TextEditingController(text: videoFileName);
+    String _selectedLanguage = 'en';
+    String _selectedOrderBy = 'new_download_count';
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: Colors.black.withOpacity(0.85),
+          title: Text('Search Subtitles'),
+          content: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(
+                  controller: _searchQueryController,
+                  decoration: InputDecoration(
+                    labelText: 'Search Query',
+                    hintText: 'Enter movie/series name',
+                  ),
+                ),
+                SizedBox(height: 20),
+                DropdownButtonFormField<String>(
+                  value: _selectedLanguage,
+                  style: TextStyle(fontWeight: FontWeight.normal),
+                  dropdownColor: Colors.black,
+                  decoration: InputDecoration(
+                    labelText: 'Language',
+                    fillColor: Colors.black.withOpacity(0.8),
+                    filled: true,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8.0),
+                    )
+                  ),
+                  items: getLanguageDropdownItems(),
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedLanguage = value!;
+                    });
+                  },
+                ),
+                SizedBox(height: 20),
+                DropdownButtonFormField<String>(
+                  value: _selectedOrderBy,
+                  dropdownColor: Colors.black,
+                  style: TextStyle(fontWeight: FontWeight.normal),
+                  decoration: InputDecoration(
+                      labelText: 'Order By',
+                      fillColor: Colors.black.withOpacity(0.8),
+                      filled: true,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8.0),
+                      )
+                  ),
+                  items: [
+                    DropdownMenuItem(
+                        value: 'new_download_count',
+                        child: Text('Most Popular')),
+                    DropdownMenuItem(
+                        value: 'download_count',
+                        child: Text('Most Downloaded')),
+                    DropdownMenuItem(
+                        value: 'ratings',
+                        child: Text('Best Rated')),
+                    DropdownMenuItem(
+                        value: 'points',
+                        child: Text('Points')),
+                    DropdownMenuItem(
+                        value: 'votes',
+                        child: Text('Votes')),
+                    DropdownMenuItem(
+                        value: 'upload_date',
+                        child: Text('Upload Date')),
+                    DropdownMenuItem(
+                        value: 'from_trusted', child: Text('From Trusted')),
+                    DropdownMenuItem(
+                        value: 'foreign_parts_only', child: Text('Foreign Parts Only')),
+                  ],
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedOrderBy = value!;
+                    });
+                  },
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                await _searchAndDownloadSubtitle(
+                  _searchQueryController.text,
+                  _selectedLanguage,
+                  _selectedOrderBy,
+                );
+              },
+              child: Text('Search'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _searchAndDownloadSubtitle(
+      String query, String language, String orderBy) async {
+    // Show loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Center(child: CircularProgressIndicator()),
+    );
+    final _subtitleDownloader = SubtitleDownloader();
+    try {
+      final videoPath = betterPlayerController!.betterPlayerDataSource?.url;
+      if (videoPath != null) {
+        // Search for subtitles using the SubtitleDownloader
+        final subtitles = await _subtitleDownloader.searchSubtitles(
+          videoPath,
+          language: language,
+          orderBy: orderBy,
+        );
+
+        // Close the loading dialog
+        Navigator.of(context).pop();
+
+        if (subtitles != null && subtitles.isNotEmpty) {
+          // Show the list of available subtitles to the user
+          _showSubtitleSelectionDialog(subtitles);
+        } else {
+          // Handle the error (no subtitles found)
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('No subtitles found for the given query.')),
+          );
+        }
+      } else {
+        // Close the loading dialog
+        Navigator.of(context).pop();
+
+        // Handle the error (video file is null)
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('No video file found to search subtitles.')),
+        );
+      }
+    } catch (e) {
+      // Close the loading dialog
+      Navigator.of(context).pop();
+
+      // Handle the error (exception occurred)
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error searching subtitles: $e')),
+      );
+    }
+  }
+
+  void _showSubtitleSelectionDialog(List<Map<String, dynamic>> subtitles) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: Colors.black.withOpacity(0.85),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12.0), // Rounded corners for dialog
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: EdgeInsets.all(16.0),
+                child: Text(
+                  'Select Subtitle',
+                  style: TextStyle(
+                    fontSize: 18.0,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              SizedBox(
+                height: MediaQuery.of(context).size.height/2, // Adjust height as needed
+                child: ListView.builder(
+                  itemCount: subtitles.length,
+                  itemBuilder: (context, index) {
+                    final subtitle = subtitles[index];
+                    final attributes = subtitle['attributes'];
+                    final fileName = attributes['release'] ?? 'Unknown';
+                    final language = attributes['language'] ?? 'Unknown';
+                    final downloads = attributes['download_count'] ?? 'Unknown';
+
+                    return Card(
+                      color: Colors.grey.withOpacity(0.15),
+                      margin: EdgeInsets.symmetric(vertical: 4.0, horizontal: 10),
+                      elevation: 2.0,
+                      child: ListTile(
+                        dense: true,
+                        contentPadding: EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                        leading: CircleAvatar(
+                          radius: 20.0,
+                          backgroundColor: Colors.blueGrey[100],
+                          child: Icon(Icons.subtitles, size: 20.0, color: Colors.blueGrey[700]),
+                        ),
+                        title: Text(
+                          fileName,
+                          style: TextStyle(
+                            fontSize: 14.0,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        subtitle: Text(
+                          'Lang: ${language.toUpperCase()} | Downloads: $downloads',
+                          style: TextStyle(
+                            fontSize: 12.0,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                        onTap: () async {
+                          Navigator.of(context).pop(); // Close the dialog
+                          final fileId = attributes['files'].first['file_id'];
+                          await _downloadAndApplySubtitle(fileId);
+                        },
+                      ),
+                    );
+                  },
+                ),
+              ),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 5),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.vertical(bottom: Radius.circular(12.0)),
+                ),
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: Text(
+                      'Cancel'
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+
+  Future<void> _downloadAndApplySubtitle(int fileId) async {
+
+    final _subtitleDownloader = SubtitleDownloader();
+
+    // Show loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Center(child: CircularProgressIndicator()),
+    );
+
+    final subtitlesDir = await _getRootSubtitlesDirectory();
+
+    final subtitleFilePath =
+        "${path.join(subtitlesDir.path, path.basenameWithoutExtension(betterPlayerController?.betterPlayerDataSource!.url ?? ''))}-sub0.srt";
+
+
+    final subtitlesFile = await _subtitleDownloader.downloadSubtitles(
+      fileId,
+        subtitleFilePath
+    );
+
+    if (subtitlesFile != null) {
+      // Apply the downloaded subtitle file to the video player
+      BetterPlayerSubtitlesSource subtitleSource =
+      BetterPlayerSubtitlesSource(
+        type: BetterPlayerSubtitlesSourceType.file,
+        urls: [subtitlesFile.path],
+        name: "Downloaded Subtitle",
+      );
+
+      await betterPlayerController!.setupSubtitleSource(subtitleSource);
+
+      // Close the loading dialog
+      Navigator.of(context).pop();
+
+      // Show a success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Subtitle downloaded and applied successfully!')),
+      );
+    } else {
+      // Close the loading dialog
+      Navigator.of(context).pop();
+
+      // Handle subtitle download failure
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to download subtitle.')),
+      );
+    }
+  }
+
+
+
+  Future<Directory> _getRootSubtitlesDirectory() async {
+    // Get the path to the 'Download' directory
+    final Directory rootDir = Directory('/storage/emulated/0/documents');
+
+    // Define the path for the 'RxPlayer' folder inside the 'Root' +directory
+    final String rxPlayerDirPath = path.join(rootDir.path, 'RxPlayer');
+    // Create the 'Subtitles' directory if it doesn't exist
+    final Directory rxPlayerDir = Directory(rxPlayerDirPath);
+    if (!await rxPlayerDir.exists()) {
+      await rxPlayerDir.create(recursive: true);
+    }
+
+    // Define the path for the 'Subtitles' folder inside the 'RxPlayer' directory
+    final String subtitlesDirPath = path.join(rxPlayerDir.path, 'Subtitles');
+
+    // Create the 'Subtitles' directory if it doesn't exist
+    final Directory subtitlesDir = Directory(subtitlesDirPath);
+    if (!await subtitlesDir.exists()) {
+      await subtitlesDir.create(recursive: true);
+    }
+
+    return subtitlesDir;
+  }
+
   void _showSubtitlesSelectionWidget() {
     final subtitles =
         List.of(betterPlayerController!.betterPlayerSubtitlesSourceList);
@@ -261,31 +597,54 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
     //       type: BetterPlayerSubtitlesSourceType.none));
     // }
 
-    final localSubtitlesElement = BetterPlayerMaterialClickableWidget(
+    final localSubtitlesElement = [
+      BetterPlayerMaterialClickableWidget(
+        onTap: (){
+          Navigator.of(context).pop();
+          _showSubtitleSearchWidget();
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+          child: Row(
+            children: [
+              const SizedBox(width: 32),
+              Text(
+                "Search from Online",
+                style: _getOverflowMenuElementTextStyle( false),
+              ),
+              const SizedBox(width: 10),
+              Icon(
+                Icons.online_prediction,
+                color:
+                betterPlayerControlsConfiguration.overflowModalTextColor,
+              )
+            ],
+          ),
+        ),
+      ),
+      BetterPlayerMaterialClickableWidget(
       onTap: _pickLocalSubtitle,
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
         child: Row(
           children: [
-            SizedBox(width: _selectedLocalSubtitlePath != null ? 8 : 16),
-            Visibility(
-                visible:  _selectedLocalSubtitlePath != null ,
-                child: Icon(
-                  Icons.check_outlined,
-                  color:
-                  betterPlayerControlsConfiguration.overflowModalTextColor,
-                )),
-            const SizedBox(width: 16),
+            const SizedBox(width: 32),
             Text(
               "Select from Local Storage",
               style: _getOverflowMenuElementTextStyle( _selectedLocalSubtitlePath != null ),
             ),
+            const SizedBox(width: 10),
+            Icon(
+              Icons.storage,
+              color:
+              betterPlayerControlsConfiguration.overflowModalTextColor,
+            )
           ],
         ),
       ),
-    );
+    )];
     _showModalBottomSheet(
-        subtitles.map((source) => _buildSubtitlesSourceRow(source)).toList()..add(localSubtitlesElement));
+        subtitles.map((source) => _buildSubtitlesSourceRow(source)).toList()..addAll(localSubtitlesElement));
   }
 
   Widget _buildSubtitlesSourceRow(BetterPlayerSubtitlesSource subtitlesSource) {
