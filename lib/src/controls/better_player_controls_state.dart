@@ -266,10 +266,18 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
       builder: (BuildContext context) {
         return AlertDialog(
           backgroundColor: Colors.black.withOpacity(0.85),
-          title: Text('Search Subtitles'),
+          scrollable: true,
+          title: Center(
+            child: Text('Search Subtitles'),
+          ),
+          titleTextStyle: TextStyle(fontSize: 20),
+          titlePadding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+          contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 0),
+          actionsPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
           content: SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 TextField(
                   controller: _searchQueryController,
