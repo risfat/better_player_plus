@@ -260,6 +260,7 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
     TextEditingController(text: videoFileName);
     String _selectedLanguage = 'en';
     String _selectedOrderBy = 'new_download_count';
+    bool _useHash = false; // Default value for Use Hash
 
     showDialog(
       context: context,
@@ -274,83 +275,119 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
           titlePadding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
           contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 0),
           actionsPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-          content: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: _searchQueryController,
-                  decoration: InputDecoration(
-                    labelText: 'Search Query',
-                    hintText: 'Enter movie/series name',
-                  ),
-                ),
-                SizedBox(height: 20),
-                DropdownButtonFormField<String>(
-                  value: _selectedLanguage,
-                  style: TextStyle(fontWeight: FontWeight.normal),
-                  dropdownColor: Colors.black,
-                  decoration: InputDecoration(
-                    labelText: 'Language',
-                    fillColor: Colors.black.withOpacity(0.8),
-                    filled: true,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8.0),
-                    )
-                  ),
-                  items: getLanguageDropdownItems(),
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedLanguage = value!;
-                    });
-                  },
-                ),
-                SizedBox(height: 20),
-                DropdownButtonFormField<String>(
-                  value: _selectedOrderBy,
-                  dropdownColor: Colors.black,
-                  style: TextStyle(fontWeight: FontWeight.normal),
-                  decoration: InputDecoration(
-                      labelText: 'Order By',
-                      fillColor: Colors.black.withOpacity(0.8),
-                      filled: true,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8.0),
-                      )
-                  ),
-                  items: [
-                    DropdownMenuItem(
-                        value: 'new_download_count',
-                        child: Text('Most Popular')),
-                    DropdownMenuItem(
-                        value: 'download_count',
-                        child: Text('Most Downloaded')),
-                    DropdownMenuItem(
-                        value: 'ratings',
-                        child: Text('Best Rated')),
-                    DropdownMenuItem(
-                        value: 'points',
-                        child: Text('Points')),
-                    DropdownMenuItem(
-                        value: 'votes',
-                        child: Text('Votes')),
-                    DropdownMenuItem(
-                        value: 'upload_date',
-                        child: Text('Upload Date')),
-                    DropdownMenuItem(
-                        value: 'from_trusted', child: Text('From Trusted')),
-                    DropdownMenuItem(
-                        value: 'foreign_parts_only', child: Text('Foreign Parts Only')),
+          content: StatefulBuilder(
+            builder: (BuildContext context, StateSetter setState) {
+              return SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: _searchQueryController,
+                      decoration: InputDecoration(
+                        labelText: 'Search Query',
+                        hintText: 'Enter movie/series name',
+                      ),
+                    ),
+                    SizedBox(height: 20),
+                    DropdownButtonFormField<String>(
+                      value: _selectedLanguage,
+                      style: TextStyle(fontWeight: FontWeight.normal),
+                      dropdownColor: Colors.black,
+                      decoration: InputDecoration(
+                        labelText: 'Language',
+                        fillColor: Colors.black.withOpacity(0.8),
+                        filled: true,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8.0),
+                        ),
+                      ),
+                      items: getLanguageDropdownItems(),
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedLanguage = value!;
+                        });
+                      },
+                    ),
+                    SizedBox(height: 20),
+                    DropdownButtonFormField<String>(
+                      value: _selectedOrderBy,
+                      dropdownColor: Colors.black,
+                      style: TextStyle(fontWeight: FontWeight.normal),
+                      decoration: InputDecoration(
+                        labelText: 'Order By',
+                        fillColor: Colors.black.withOpacity(0.8),
+                        filled: true,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8.0),
+                        ),
+                      ),
+                      items: [
+                        DropdownMenuItem(
+                            value: 'new_download_count',
+                            child: Text('Most Popular')),
+                        DropdownMenuItem(
+                            value: 'download_count', child: Text('Most Downloaded')),
+                        DropdownMenuItem(value: 'ratings', child: Text('Best Rated')),
+                        DropdownMenuItem(value: 'points', child: Text('Most Points')),
+                        DropdownMenuItem(value: 'votes', child: Text('Most Votes')),
+                        DropdownMenuItem(
+                            value: 'upload_date', child: Text('Upload Date')),
+                        DropdownMenuItem(
+                            value: 'from_trusted', child: Text('From Trusted')),
+                        DropdownMenuItem(
+                            value: 'ai_translated',
+                            child: Text('Ai Translated')),
+                        DropdownMenuItem(
+                            value: 'hearing_impaired',
+                            child: Text('Hearing Impaired')),
+                        DropdownMenuItem(
+                            value: 'foreign_parts_only',
+                            child: Text('Foreign Parts Only')),
+                      ],
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedOrderBy = value!;
+                        });
+                      },
+                    ),
+                    SizedBox(height: 20),
+                    Text(
+                      'Use Hash',
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                    ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: RadioListTile<bool>(
+                            title: const Text('Yes',style: TextStyle(fontSize: 13, fontWeight: FontWeight.normal)),
+                            value: true,
+                            groupValue: _useHash,
+                            onChanged: (value) {
+                              setState(() {
+                                _useHash = value!;
+                              });
+                            },
+                          ),
+                        ),
+                        Expanded(
+                          child: RadioListTile<bool>(
+                            title: const Text('No', style: TextStyle(fontSize: 13, fontWeight: FontWeight.normal)),
+                            value: false,
+                            groupValue: _useHash,
+                            onChanged: (value) {
+                              setState(() {
+                                _useHash = value!;
+                              });
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedOrderBy = value!;
-                    });
-                  },
                 ),
-              ],
-            ),
+              );
+            },
           ),
           actions: [
             TextButton(
@@ -364,6 +401,7 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
                   _searchQueryController.text,
                   _selectedLanguage,
                   _selectedOrderBy,
+                  _useHash,
                 );
               },
               child: Text('Search'),
@@ -375,7 +413,7 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
   }
 
   Future<void> _searchAndDownloadSubtitle(
-      String query, String language, String orderBy) async {
+      String query, String language, String orderBy, bool useHash) async {
     // Show loading dialog
     showDialog(
       context: context,
@@ -391,6 +429,7 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
           videoPath,
           language: language,
           orderBy: orderBy,
+          useHash: useHash,
         );
 
         // Close the loading dialog
@@ -478,7 +517,7 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
                           ),
                         ),
                         subtitle: Text(
-                          'Lang: ${language.toUpperCase()} | Downloads: $downloads',
+                          'Language: ${language.toUpperCase()} | Downloads: $downloads',
                           style: TextStyle(
                             fontSize: 12.0,
                             color: Colors.grey[600],
@@ -528,15 +567,12 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
       builder: (context) => Center(child: CircularProgressIndicator()),
     );
 
-    final subtitlesDir = await _getRootSubtitlesDirectory();
-
-    final subtitleFilePath =
-        "${path.join(subtitlesDir.path, path.basenameWithoutExtension(betterPlayerController?.betterPlayerDataSource!.url ?? ''))}-sub0.srt";
+    final subtitleFilePath = getSubtitleFilePath(betterPlayerController?.betterPlayerDataSource!.url);
 
 
     final subtitlesFile = await _subtitleDownloader.downloadSubtitles(
       fileId,
-        subtitleFilePath
+        subtitleFilePath!
     );
 
     if (subtitlesFile != null) {
@@ -568,31 +604,29 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
     }
   }
 
-
-
-  Future<Directory> _getRootSubtitlesDirectory() async {
-    // Get the path to the 'Download' directory
-    final Directory rootDir = Directory('/storage/emulated/0/documents');
-
-    // Define the path for the 'RxPlayer' folder inside the 'Root' +directory
-    final String rxPlayerDirPath = path.join(rootDir.path, 'RxPlayer');
-    // Create the 'Subtitles' directory if it doesn't exist
-    final Directory rxPlayerDir = Directory(rxPlayerDirPath);
-    if (!await rxPlayerDir.exists()) {
-      await rxPlayerDir.create(recursive: true);
+  String? getSubtitleFilePath(String? videoFilePath) {
+    // Check if the input video file path is null
+    if (videoFilePath == null || videoFilePath.isEmpty) {
+      return null; // Return null if the video file path is invalid
     }
 
-    // Define the path for the 'Subtitles' folder inside the 'RxPlayer' directory
-    final String subtitlesDirPath = path.join(rxPlayerDir.path, 'Subtitles');
+    // Create a File object for the video
+    final video = File(videoFilePath);
 
-    // Create the 'Subtitles' directory if it doesn't exist
-    final Directory subtitlesDir = Directory(subtitlesDirPath);
-    if (!await subtitlesDir.exists()) {
-      await subtitlesDir.create(recursive: true);
-    }
+    // Get the directory where the video file is located
+    final subtitlesDir = video.parent;
 
-    return subtitlesDir;
+    // Extract the base file name (without extension) of the video
+    final baseFileName = path.basenameWithoutExtension(videoFilePath);
+
+    // Construct the subtitle file path by appending ".srt" to the base file name
+    final subtitleFilePath = path.join(subtitlesDir.path, "$baseFileName.srt");
+
+    // Return the constructed subtitle file path
+    return subtitleFilePath;
   }
+
+
 
   void _showSubtitlesSelectionWidget() {
     final subtitles =

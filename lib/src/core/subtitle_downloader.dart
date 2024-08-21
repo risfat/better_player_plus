@@ -62,15 +62,21 @@ class SubtitleDownloader {
       String videoPath, {
         String language = 'en',
         String orderBy = 'new_download_count',
+        bool useHash = false
       }) async {
     // await _ensureLoggedIn();
 
-    final movieHash = await VideoHasher.calculateHash(videoPath);
-    print("=====================Movie Hash: $movieHash===========================");
+    String? movieHash;
+    if (useHash) {
+      movieHash = await VideoHasher.calculateHash(videoPath);
+      print("=====================Movie Hash: $movieHash===========================");
+    }
+
 
     final query = path.basenameWithoutExtension(videoPath);
     final url =
-        'https://api.opensubtitles.com/api/v1/subtitles?query=$query&languages=$language&order_by=$orderBy&moviehash=$movieHash';
+        useHash ? 'https://api.opensubtitles.com/api/v1/subtitles?query=$query&languages=$language&order_by=$orderBy&moviehash=$movieHash' :
+        'https://api.opensubtitles.com/api/v1/subtitles?query=$query&languages=$language&order_by=$orderBy';
 
     print("======================$url==========================");
     try {
