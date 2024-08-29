@@ -153,6 +153,7 @@ class SubtitleDownloader {
       }
     } catch (e) {
       print('Error during subtitle download: $e');
+      rethrow;
     }
     return null;
   }

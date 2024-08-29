@@ -569,38 +569,49 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
 
     final subtitleFilePath = getSubtitleFilePath(betterPlayerController?.betterPlayerDataSource!.url);
 
-
-    final subtitlesFile = await _subtitleDownloader.downloadSubtitles(
-      fileId,
-        subtitleFilePath!
-    );
-
-    if (subtitlesFile != null) {
-      // Apply the downloaded subtitle file to the video player
-      BetterPlayerSubtitlesSource subtitleSource =
-      BetterPlayerSubtitlesSource(
-        type: BetterPlayerSubtitlesSourceType.file,
-        urls: [subtitlesFile.path],
-        name: "Downloaded Subtitle",
+    try {
+      final subtitlesFile = await _subtitleDownloader.downloadSubtitles(
+          fileId,
+          subtitleFilePath!
       );
 
-      await betterPlayerController!.setupSubtitleSource(subtitleSource);
+      if (subtitlesFile != null) {
+        // Apply the downloaded subtitle file to the video player
+        BetterPlayerSubtitlesSource subtitleSource =
+        BetterPlayerSubtitlesSource(
+          type: BetterPlayerSubtitlesSourceType.file,
+          urls: [subtitlesFile.path],
+          name: "Downloaded Subtitle",
+        );
 
-      // Close the loading dialog
-      Navigator.of(context).pop();
+        await betterPlayerController!.setupSubtitleSource(subtitleSource);
 
-      // Show a success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Subtitle downloaded and applied successfully!')),
-      );
-    } else {
-      // Close the loading dialog
-      Navigator.of(context).pop();
 
+        // Show a success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Subtitle downloaded and applied successfully!')),
+        );
+      } else {
+
+        // Handle subtitle download failure
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to download subtitle.')),
+        );
+      }
+    }catch(e) {
       // Handle subtitle download failure
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to download subtitle.')),
-      );
+      if (e is PathAccessException) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to download subtitle. To download subtitle you have to allow Manage Storage permission.')),
+        );
+      }else{
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to download subtitle. Error: ${e.toString()}')),
+        );
+      }
+    }finally{
+      // Close the loading dialog
+      Navigator.of(context).pop();
     }
   }
 
