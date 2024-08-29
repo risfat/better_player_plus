@@ -128,7 +128,9 @@ class _BetterPlayerMaterialControlsState
         }
       },
       onDoubleTapDown: (details) {
-        _handleDoubleTap(details);
+        if (_betterPlayerController!.controlsEnabled) {
+          _handleDoubleTap(details);
+        }
       },
       onVerticalDragStart: (details) {
         if(_betterPlayerController!.controlsEnabled){
@@ -868,7 +870,9 @@ class _BetterPlayerMaterialControlsState
         opacity: controlsNotVisible ? 0.0 : 1.0,
         duration: _controlsConfiguration.controlsHideTime,
         onEnd: _onPlayerHide,
-        child: _buildLockButton(),
+        child: Center(
+          child: _buildLockButton(),
+        ),
       );
     }
     return AnimatedOpacity(
@@ -923,7 +927,6 @@ class _BetterPlayerMaterialControlsState
             ),
             const SizedBox(height: 2),
             Expanded(
-              flex: 75,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
