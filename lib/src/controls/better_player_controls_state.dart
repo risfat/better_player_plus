@@ -8,6 +8,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path/path.dart' as path;
+import 'package:path_provider/path_provider.dart';
 import 'package:better_player_plus/src/core/subtitle_downloader.dart';
 import 'package:better_player_plus/src/core/language_list.dart';
 
@@ -567,7 +568,7 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
       builder: (context) => Center(child: CircularProgressIndicator()),
     );
 
-    final subtitleFilePath = getSubtitleFilePath(betterPlayerController?.betterPlayerDataSource!.url);
+    final subtitleFilePath = await getSubtitleFilePath(betterPlayerController?.betterPlayerDataSource!.url);
 
     try {
       final subtitlesFile = await _subtitleDownloader.downloadSubtitles(
@@ -615,17 +616,19 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
     }
   }
 
-  String? getSubtitleFilePath(String? videoFilePath) {
+  Future<String?> getSubtitleFilePath(String? videoFilePath) async{
     // Check if the input video file path is null
     if (videoFilePath == null || videoFilePath.isEmpty) {
       return null; // Return null if the video file path is invalid
     }
-
-    // Create a File object for the video
-    final video = File(videoFilePath);
+    //
+    // // Create a File object for the video
+    // final video = File(videoFilePath);
 
     // Get the directory where the video file is located
-    final subtitlesDir = video.parent;
+    // final subtitlesDir = video.parent;
+
+    final subtitlesDir = await getOrCreateSubtitlesDirectory();
 
     // Extract the base file name (without extension) of the video
     final baseFileName = path.basenameWithoutExtension(videoFilePath);
@@ -635,6 +638,25 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
 
     // Return the constructed subtitle file path
     return subtitleFilePath;
+  }
+
+  Future<Directory> getOrCreateSubtitlesDirectory() async {
+    // Get the directory for the application's documents
+    final Directory appDocDir = await getApplicationDocumentsDirectory();
+
+    // Define the path for the "Subtitles" directory within the application's documents directory
+    final Directory subtitlesDir = Directory('${appDocDir.path}/Subtitles');
+
+    print(
+        "====================Subtitles Dir: ${subtitlesDir.path} (better_player)===============================");
+    // Check if the directory exists
+    if (await subtitlesDir.exists()) {
+      // If it exists, return the directory
+      return subtitlesDir;
+    } else {
+      // If it doesn't exist, create the directory and return it
+      return await subtitlesDir.create(recursive: true);
+    }
   }
 
 
