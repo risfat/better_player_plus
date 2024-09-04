@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math';
+import 'package:flutter/services.dart';
 import 'package:better_player_plus/src/configuration/better_player_controls_configuration.dart';
 import 'package:better_player_plus/src/controls/better_player_clickable_widget.dart';
 import 'package:better_player_plus/src/controls/better_player_controls_state.dart';
@@ -275,6 +276,17 @@ class _BetterPlayerMaterialControlsState
         _betterPlayerController!.exitFullScreen();
       } else {
         _betterPlayerController!.enterFullScreen();
+      }
+    }
+  }
+
+  Future<void> _toggleSystemUiMode(bool isOn) async {
+    if (_betterPlayerController!.isFullScreen) {
+      if (isOn) {
+        await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge, overlays: SystemUiOverlay.values);
+      } else {
+        await SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: []);
+        // await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
       }
     }
   }
@@ -1345,7 +1357,6 @@ class _BetterPlayerMaterialControlsState
   void cancelAndRestartTimer() {
     _hideTimer?.cancel();
     _startHideTimer();
-
     changePlayerControlsNotVisible(false);
     _displayTapped = true;
   }
@@ -1415,7 +1426,9 @@ class _BetterPlayerMaterialControlsState
     if (_betterPlayerController!.controlsAlwaysVisible) {
       return;
     }
+    _toggleSystemUiMode(true);
     _hideTimer = Timer(const Duration(milliseconds: 3000), () {
+      _toggleSystemUiMode(false);
       changePlayerControlsNotVisible(true);
     });
   }
