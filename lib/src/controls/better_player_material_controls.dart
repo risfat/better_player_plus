@@ -1163,7 +1163,7 @@ class _BetterPlayerMaterialControlsState
             alignment: Alignment.bottomRight,
             child: Container(
               margin: EdgeInsets.only(
-                  bottom: _controlsConfiguration.controlBarHeight + 20,
+                  bottom: _controlsConfiguration.controlBarHeight,
                   right: 24),
               decoration: BoxDecoration(
                 color: _controlsConfiguration.controlBarColor,
@@ -1179,7 +1179,7 @@ class _BetterPlayerMaterialControlsState
                       style: const TextStyle(color: Colors.white),
                     ),
                   ),
-                  SizedBox(width: 10),
+                  SizedBox(width: 5),
                   // Skip to next video button
                   TextButton(
                     onPressed: () {
