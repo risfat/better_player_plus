@@ -12,7 +12,6 @@ import 'package:better_player_plus/src/core/better_player_utils.dart';
 import 'package:better_player_plus/src/video_player/video_player.dart'; // Flutter imports:
 import 'package:screen_brightness/screen_brightness.dart';
 import 'package:volume_controller/volume_controller.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:flutter/material.dart';
 
 class BetterPlayerMaterialControls extends StatefulWidget {
@@ -737,8 +736,10 @@ class _BetterPlayerMaterialControlsState
                       ),
                     ),
                     // const Spacer(),
-                    if (_betterPlayerController!.isFullScreen)
-                      _buildAudioButton(),
+                    if (_betterPlayerController!.isFullScreen) ...[
+                      _buildFitButton(),
+                      _buildAudioButton()
+                    ],
                     _buildPipButton(),
                     _buildSpeedButton(),
                     _buildSubtitleButton(),
@@ -944,8 +945,6 @@ class _BetterPlayerMaterialControlsState
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   _buildLockButton(),
-                  if(_betterPlayerController!.isFullScreen)
-                    _buildFitButton(),
                   _buildLoopButton(_controller),
                   const Spacer(),
                   if (_controlsConfiguration.enablePlayPause) ...[
@@ -1293,10 +1292,14 @@ class _BetterPlayerMaterialControlsState
       onTap: () {
         if (_betterPlayerController?.getFit() == BoxFit.contain) {
           _betterPlayerController?.setOverriddenFit(BoxFit.fill);
-          Fluttertoast.showToast(msg: "Switched to Fill Mode: Content will fill the entire screen.");
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Switched to Fill Mode: Content will fill the entire screen.')),
+          );
         } else {
           _betterPlayerController?.setOverriddenFit(BoxFit.contain);
-          Fluttertoast.showToast(msg: "Switched to Contain Mode: Content will fit within the screen boundaries.");
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Switched to Contain Mode: Content will fit within the screen boundaries.')),
+          );
         }
       },
       child: Padding(

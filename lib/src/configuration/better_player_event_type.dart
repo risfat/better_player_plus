@@ -26,5 +26,6 @@ enum BetterPlayerEventType {
   bufferingEnd,
   changedPlaylistItem,
   playNext,
-  playPrevious
+  playPrevious,
+  changedFit
 }

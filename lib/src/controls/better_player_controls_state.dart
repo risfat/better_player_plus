@@ -227,6 +227,8 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
       onTap: () {
         Navigator.of(context).pop();
         betterPlayerController?.setOverriddenFit(fit);
+        betterPlayerController?.postEvent(
+            BetterPlayerEvent(BetterPlayerEventType.changedFit));
       },
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
