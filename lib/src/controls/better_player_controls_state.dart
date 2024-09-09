@@ -114,6 +114,12 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
                 Navigator.of(context).pop();
                 _showAudioTracksSelectionWidget();
               }),
+            _buildMoreOptionsListRow(
+                Icons.fit_screen,
+                "Aspect Ratio & Fit", () {
+              Navigator.of(context).pop();
+              _showFitChooserWidget();
+            }),
             if (betterPlayerControlsConfiguration
                 .overflowMenuCustomItems.isNotEmpty)
               ...betterPlayerControlsConfiguration.overflowMenuCustomItems.map(
@@ -169,6 +175,18 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
     ]);
   }
 
+  void _showFitChooserWidget() {
+    _showModalBottomSheet([
+      _buildFitRow(BoxFit.fill),
+      _buildFitRow(BoxFit.contain),
+      _buildFitRow(BoxFit.cover),
+      _buildFitRow(BoxFit.fitWidth),
+      _buildFitRow(BoxFit.fitHeight),
+      _buildFitRow(BoxFit.scaleDown),
+      _buildFitRow(BoxFit.none)
+    ]);
+  }
+
   Widget _buildSpeedRow(double value) {
     final bool isSelected =
         betterPlayerController!.videoPlayerController!.value.speed == value;
@@ -193,6 +211,38 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
             const SizedBox(width: 16),
             Text(
               "$value x",
+              style: _getOverflowMenuElementTextStyle(isSelected),
+            )
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFitRow(BoxFit fit) {
+    final bool isSelected =
+        betterPlayerController?.getFit() == fit;
+
+    return BetterPlayerMaterialClickableWidget(
+      onTap: () {
+        Navigator.of(context).pop();
+        betterPlayerController?.setOverriddenFit(fit);
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+        child: Row(
+          children: [
+            SizedBox(width: isSelected ? 8 : 16),
+            Visibility(
+                visible: isSelected,
+                child: Icon(
+                  Icons.check_outlined,
+                  color:
+                  betterPlayerControlsConfiguration.overflowModalTextColor,
+                )),
+            const SizedBox(width: 16),
+            Text(
+              fit.name[0].toUpperCase() + fit.name.substring(1),
               style: _getOverflowMenuElementTextStyle(isSelected),
             )
           ],
