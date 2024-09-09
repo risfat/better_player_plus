@@ -283,7 +283,7 @@ class _BetterPlayerMaterialControlsState
   Future<void> _toggleSystemUiMode(bool isOn) async {
     if (_betterPlayerController!.isFullScreen) {
       if (isOn) {
-        await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge, overlays: SystemUiOverlay.values);
+        await SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: [SystemUiOverlay.top]);
       } else {
         await SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: []);
         // await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
