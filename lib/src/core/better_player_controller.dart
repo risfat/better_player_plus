@@ -845,15 +845,15 @@ class BetterPlayerController {
   ///manually.
   void startNextVideoTimer() {
     if (_nextVideoTimer == null) {
-      if (betterPlayerPlaylistConfiguration == null) {
-        BetterPlayerUtils.log(
-            "BettterPlayerPlaylistConifugration has not been set!");
-        throw StateError(
-            "BettterPlayerPlaylistConifugration has not been set!");
-      }
+      // if (betterPlayerPlaylistConfiguration == null) {
+      //   BetterPlayerUtils.log(
+      //       "BettterPlayerPlaylistConifugration has not been set!");
+      //   throw StateError(
+      //       "BettterPlayerPlaylistConifugration has not been set!");
+      // }
 
       _nextVideoTime =
-          betterPlayerPlaylistConfiguration!.nextVideoDelay.inSeconds;
+          Duration(seconds: 5).inSeconds;
       _nextVideoTimeStreamController.add(_nextVideoTime);
       if (_nextVideoTime == 0) {
         return;
@@ -889,8 +889,12 @@ class BetterPlayerController {
   //   cancelNextVideoTimer();
   // }
 
-    void playNextVideo() {
+  void playNextVideo() {
     _postEvent(BetterPlayerEvent(BetterPlayerEventType.playNext));
+  }
+
+  void skipNextVideo() {
+    _postEvent(BetterPlayerEvent(BetterPlayerEventType.skipNext));
   }
 
   void playPreviousVideo() {

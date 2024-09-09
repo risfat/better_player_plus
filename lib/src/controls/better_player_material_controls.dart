@@ -1152,33 +1152,62 @@ class _BetterPlayerMaterialControlsState
   //   );
   // }
 
+
   Widget _buildNextVideoWidget() {
     return StreamBuilder<int?>(
       stream: _betterPlayerController!.nextVideoTimeStream,
       builder: (context, snapshot) {
         final time = snapshot.data;
         if (time != null && time > 0) {
-          return BetterPlayerMaterialClickableWidget(
-            onTap: () {
-              _betterPlayerController!.playNextVideo();
-            },
-            child: Align(
-              alignment: Alignment.bottomRight,
-              child: Container(
-                margin: EdgeInsets.only(
-                    bottom: _controlsConfiguration.controlBarHeight + 20,
-                    right: 24),
-                decoration: BoxDecoration(
-                  color: _controlsConfiguration.controlBarColor,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Text(
-                    "${_betterPlayerController!.translations.controlsNextVideoIn} $time...",
-                    style: const TextStyle(color: Colors.white),
+          return Align(
+            alignment: Alignment.bottomRight,
+            child: Container(
+              margin: EdgeInsets.only(
+                  bottom: _controlsConfiguration.controlBarHeight + 20,
+                  right: 24),
+              decoration: BoxDecoration(
+                color: _controlsConfiguration.controlBarColor,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Text(
+                      "${_betterPlayerController!.translations.controlsNextVideoIn} $time...",
+                      style: const TextStyle(color: Colors.white),
+                    ),
                   ),
-                ),
+                  SizedBox(width: 10),
+                  // Skip to next video button
+                  TextButton(
+                    onPressed: () {
+                      _betterPlayerController?.skipNextVideo();
+                      _betterPlayerController?.cancelNextVideoTimer();
+                    },
+                    style: TextButton.styleFrom(
+                      backgroundColor: Colors.redAccent,
+                      minimumSize: Size(40, 20), // Smaller size
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 2, horizontal: 4),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 5, horizontal: 9),
+                      child: Text(
+                        "Skip",
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12, // Smaller font size
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           );
