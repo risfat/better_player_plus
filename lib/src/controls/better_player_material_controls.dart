@@ -1158,65 +1158,74 @@ class _BetterPlayerMaterialControlsState
       stream: _betterPlayerController!.nextVideoTimeStream,
       builder: (context, snapshot) {
         final time = snapshot.data;
-        if (time != null && time > 0) {
-          return Align(
-            alignment: Alignment.bottomRight,
-            child: Container(
-              margin: EdgeInsets.only(
-                  bottom: _controlsConfiguration.controlBarHeight,
-                  right: 24),
-              decoration: BoxDecoration(
-                color: _controlsConfiguration.controlBarColor,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Text(
-                      "${_betterPlayerController!.translations.controlsNextVideoIn} $time...",
-                      style: const TextStyle(color: Colors.white),
-                    ),
-                  ),
-                  SizedBox(width: 5),
-                  // Skip to next video button
-                  TextButton(
-                    onPressed: () {
-                      _betterPlayerController?.skipNextVideo();
-                      _betterPlayerController?.cancelNextVideoTimer();
-                    },
-                    style: TextButton.styleFrom(
-                      backgroundColor: Colors.redAccent,
-                      minimumSize: Size(40, 20), // Smaller size
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 2, horizontal: 4),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+
+        // When time is available and greater than 0, slide in the widget
+        final showWidget = time != null && time > 0;
+
+        return Align(
+          alignment: Alignment.bottomRight,
+          child: AnimatedSlide(
+            offset: showWidget ? Offset.zero : const Offset(1.0, 0.0), // Slide in when visible
+            duration: const Duration(milliseconds: 300), // Duration of the slide animation
+            curve: Curves.easeInOut,
+            child: Visibility(
+              visible: showWidget, // Ensures the widget is only in the tree when time is valid
+              child: Container(
+                margin: EdgeInsets.only(
+                  bottom: _controlsConfiguration.controlBarHeight +
+                      (_betterPlayerController?.isFullScreen ?? false ? 30 : 0),
+                  right: 24,
+                ),
+                decoration: BoxDecoration(
+                  color: _controlsConfiguration.controlBarColor,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Text(
+                        "${_betterPlayerController!.translations.controlsNextVideoIn} $time...",
+                        style: const TextStyle(color: Colors.white),
                       ),
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 5, horizontal: 9),
-                      child: Text(
-                        "Skip",
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12, // Smaller font size
+                    const SizedBox(width: 5),
+                    // Skip to next video button
+                    TextButton(
+                      onPressed: () {
+                        _betterPlayerController?.skipNextVideo();
+                        _betterPlayerController?.cancelNextVideoTimer();
+                      },
+                      style: TextButton.styleFrom(
+                        backgroundColor: Colors.redAccent,
+                        minimumSize: const Size(40, 20), // Smaller size
+                        padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 4),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 5, horizontal: 9),
+                        child: Text(
+                          "Skip",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12, // Smaller font size
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          );
-        } else {
-          return const SizedBox();
-        }
+          ),
+        );
       },
     );
   }
+
 
   Widget _buildMuteButton(
     VideoPlayerController? controller,
