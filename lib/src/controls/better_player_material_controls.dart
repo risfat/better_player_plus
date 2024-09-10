@@ -1480,6 +1480,10 @@ class _BetterPlayerMaterialControlsState
       if (!_controller!.value.initialized) {
       } else {
         if (isFinished) {
+          // For skipping next video
+          _betterPlayerController?.skipNextVideo();
+          _betterPlayerController?.cancelNextVideoTimer();
+
           _betterPlayerController!.seekTo(const Duration());
         }
         _betterPlayerController!.play();
