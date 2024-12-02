@@ -724,10 +724,10 @@ class _BetterPlayerMaterialControlsState
                       // width: MediaQuery.of(context).size.width /
                       //     (betterPlayerController!.isFullScreen ? 1.4 : 2.2),
                       child: Text(
-                        _betterPlayerController?.betterPlayerDataSource?.url
-                                .split('/')
-                                .last ??
-                            "Unknown",
+                          Uri.decodeComponent(_betterPlayerController?.betterPlayerDataSource?.url
+                              .split('/')
+                              .last ??
+                              "Unknown"),
                         maxLines: betterPlayerController!.isFullScreen ? 2 : 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
